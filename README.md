@@ -1,0 +1,1 @@
+# django-statistical-platform
