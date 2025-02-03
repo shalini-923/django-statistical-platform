@@ -1,0 +1,630 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - CSV Data Visualization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* General Reset and Body Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f9;
+            display: flex;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            transform: translateX(0);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        
+        .sidebar .logo img {
+            width: 80px;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+            width: 100%;
+            padding: 0;
+        }
+        .sidebar ul li {
+            margin-bottom: 20px;
+        }
+        
+        .sidebar ul li a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar ul li a i {
+            margin-right: 10px;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        
+        .sidebar .logout {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .sidebar .logout a {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        /* Content container adjustment to leave space for sidebar and header */
+        .content-container {
+            margin-left: 220px;
+            padding-top: 80px; /* Height of the header */
+            padding: 20px;
+            width: calc(100% - 220px);
+        }
+
+        /* Header Styling */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 220px;
+            right: 0;
+            height: 60px;
+            padding: 10px 20px;
+            background-color: #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #bdc3c7;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #34495e;
+        }
+
+        .header .user {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .header .user img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            width: 100%;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 100%;
+            width: calc(50% - 20px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-out;
+            
+        }
+        /* Responsive Plotly chart containers */
+        #scatter-plot, #bar-chart, #line-chart, #pie-chart {
+            width: 100%;
+            height: 100%;
+            min-height: 300px; /* Minimum height */
+        }
+
+        .card h4 {
+            margin-bottom: 15px;
+            color: #34495e;
+            font-size: 18px;
+        }
+
+        .card img, .card div {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .file-details {
+            margin-bottom: 20px;
+        }
+
+        .file-details p {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 80px 10px 10px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .sidebar {
+                display: none; /* Hide sidebar on smaller screens */
+            }
+
+            .header {
+                left: 0;
+                width: 100%;
+            }
+
+            .content-container {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .card {
+                width: 100%; /* Full width on smaller screens */
+            }
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none; /* Initially hidden */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); /* Faint background */
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .close {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+
+        .modal-content .user-details {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .edit-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .edit-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Keyframe for modal fade-in effect */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Button Style for Download */
+        #download-pdf {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #download-pdf:hover {
+            background-color: #2980b9;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        .card {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{% static 'img/logo.jpeg' %}" alt="Logo">
+        </div>
+        <ul>
+            <li><a href="{% url 'csv_visualizer:visualize_csv' %}"><i class="fas fa-th"></i> Dashboard</a></li>
+            <li><a href="{% url 'csv_visualizer:portfolio' %}"><i class="fas fa-briefcase"></i> Portfolio</a></li>
+            <li>
+                {% if csv_file and csv_file.id %}
+                    <a href="{% url 'csv_visualizer:chartjs_visualization' file_id=csv_file.id %}">
+                        <i class="fas fa-chart-bar"></i> Chart.js Visualization
+                    </a>
+                {% else %}
+                    <span><i class="fas fa-chart-bar"></i> No file uploaded</span>
+                {% endif %}
+            </li>
+            {% if csv_file %}
+            <li>
+                <a href="{% url 'csv_visualizer:view_ml_prediction' file_id=csv_file.id %}">
+                    <i class="fas fa-robot"></i> View ML Prediction
+                </a>
+            </li>
+            {% else %}
+            <li><span><i class="fas fa-robot"></i> No file uploaded</span></li>
+            {% endif %}
+             
+
+
+
+            <li><a href="{% url 'csv_visualizer:upload_csv' %}"><i class="fas fa-plus-square"></i> Create</a></li>
+            <li><a href="{% url 'csv_visualizer:user_upload_history' %}"><i class="fas fa-address-book"></i> History </a></li>
+            <li><a href="{% url 'csv_visualizer:edit_profile' %}"><i class="fas fa-cog"></i> Settings</a></li>
+          
+            <li><a href="javascript:void(0);" onclick="window.history.back();"><i class="fas fa-arrow-left"></i> Back</a></li>
+        </ul>
+        <div class="logout">
+            <!-- Adjusted logout link with namespace -->
+        <a href="{% url 'csv_visualizer:custom_logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+
+
+        </div>
+    </div>
+    
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1>Visualize Uploaded CSV Data</h1>
+            <div class="user" id="userProfile">
+                <img src="{% static 'img/user_logo.jpg' %}" alt="User">
+                <span>{{ user.username }}</span>
+                
+               
+            </div>
+        </div>
+
+        <!-- Modal for User Details -->
+            <div id="userModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" id="closeModal">&times;</span>
+                    <h2>User Details</h2>
+                    <div class="user-details">
+                        <span><strong>Name:</strong>{{ user.username }}</span>
+                        <span><strong>Email:</strong> {{ user.email }}</span>
+
+                    </div>
+                    <a href="{% url 'csv_visualizer:edit_profile' %}" class="edit-profile-button">Edit Profile</a>
+
+                </div>
+            </div>
+        
+        <!-- File Details -->
+        <div class="content-container">
+            <div class="file-details">
+                <p><strong>File Name:</strong> {{ csv_file.file.name }}</p>
+                <p><strong>Uploaded At:</strong> {{ csv_file.uploaded_at }}</p>
+                <a href="javascript:void(0);" id="download-pdf" class="download-icon">
+                    <i class="fas fa-download"></i>
+                </a>
+                
+            </div>
+
+        <!-- Visualization Container -->
+        <div class="container">
+            {% load custom_filters %}
+            
+            <!-- Matplotlib Bar Chart Card -->
+            <div class="card">
+                <h4>Matplotlib Bar Chart</h4>
+                <img src="data:image/png;base64,{{ bar_chart|base64_encode }}" alt="Matplotlib Bar Chart">
+            </div>
+
+            <!-- Seaborn Boxplot Card -->
+            <div class="card">
+                <h4>Seaborn Box Plot</h4>
+                <img src="data:image/png;base64,{{ boxplot|base64_encode }}" alt="Seaborn Boxplot">
+            </div>
+
+            <!-- Plotly Scatter Plot Card -->
+            <div class="card">
+                <h4>Plotly Scatter Plot</h4>
+                <div id="scatter-plot"></div> 
+                <script>
+                    var trace1 = {
+                        x: [1, 2, 3, 4],
+                        y: [10, 11, 12, 13],
+                        mode: 'markers',
+                        type: 'scatter',
+                        text: ['Point 1', 'Point 2', 'Point 3', 'Point 4'], // Hover text for each point
+                        hoverinfo: 'x+y+text', // Display x, y, and custom text on hover
+                    };
+                
+                    var data = [trace1];
+                
+                    var layout = {
+                        title: 'Interactive Scatter Plot',
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' }
+                    };
+                
+                    Plotly.newPlot('scatter-plot', data, layout);
+                </script>
+                
+                
+            </div>
+
+            
+            <!-- Plotly Bar Chart Card -->
+                <div class="card">
+                    <h4>Plotly Bar Chart</h4>
+                    <div id="bar-chart"></div>  <!-- This is where the Plotly chart will render -->
+                    <script>
+                        var trace1 = {
+                            x: ['A', 'B', 'C', 'D'],
+                            y: [10, 11, 12, 13],
+                            type: 'bar',
+                            text: ['Value A', 'Value B', 'Value C', 'Value D'],
+                            hoverinfo: 'x+y+text',  // Hover on bar to show details
+                        };
+
+                        var data = [trace1];
+
+                        var layout = {
+                            title: 'Interactive Bar Chart',
+                            xaxis: { title: 'Category' },
+                            yaxis: { title: 'Values' }
+                        };
+
+                        Plotly.newPlot('bar-chart', data, layout);
+                    </script>
+    
+                </div>
+
+            <!-- Line Chart Card -->
+            <div class="card">
+                <h4>Line Chart</h4>
+                <div id="line-chart"></div>  <!-- This is where the Plotly chart will render -->
+                <script>
+                    var trace1 = {
+                        x: [1, 2, 3, 4],
+                        y: [10, 11, 12, 13],
+                        mode: 'lines+markers',
+                        type: 'scatter',
+                        text: ['Point 1', 'Point 2', 'Point 3', 'Point 4'],  // Hover info
+                        hoverinfo: 'x+y+text',  // Display x, y, and text on hover
+                    };
+
+                    var data = [trace1];
+
+                    var layout = {
+                        title: 'Interactive Line Chart',
+                        xaxis: { title: 'X Axis' },
+                        yaxis: { title: 'Y Axis' }
+                    };
+
+                    Plotly.newPlot('line-chart', data, layout);
+                </script>
+            </div>
+
+            <!-- Pie Chart Card -->
+             <div class="card"> 
+                <h4>Pie Chart</h4>
+                <div id="pie-chart"></div> 
+                <script>
+                    var data = [{
+                        values: [10, 20, 30, 40],
+                        labels: ['A', 'B', 'C', 'D'],
+                        type: 'pie',
+                        hoverinfo: 'label+percent'  // Hover info for Pie chart
+                    }];
+
+                    var layout = {
+                        title: 'Interactive Pie Chart'
+                    };
+
+                    Plotly.newPlot('pie-chart', data, layout);
+                </script>
+               
+            </div> 
+
+
+            <!-- Violin Plot Card -->
+            <div class="card">
+                <h4>Violin Plot</h4>
+                <img src="data:image/png;base64,{{ violin_plot|base64_encode }}" alt="Violin Plot">
+            </div>
+
+            <!-- Stacked Bar Chart Card -->
+            <div class="card">
+                <h4>Stacked Bar Chart</h4>
+                {{ stacked_bar_chart|safe }}
+            </div>
+
+            <!-- Radar Chart Card -->
+            <div class="card">
+                <h4>Radar Chart</h4>
+                {{ radar_chart|safe }}
+            </div>
+
+            <!-- 3D Scatter Plot Card -->
+            <div class="card">
+                <h4>3D Scatter Plot</h4>
+                {{ scatter_3d|safe }}
+            </div>
+        </div>
+    </div>
+
+   
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById("userModal");
+            var userProfile = document.getElementById("userProfile");
+            var closeModal = document.getElementById("closeModal");
+        
+            // Open modal when user profile is clicked
+            userProfile.onclick = function() {
+                modal.style.display = "block";
+            }
+        
+            // Close modal when close button is clicked
+            closeModal.onclick = function() {
+                modal.style.display = "none";
+            }
+        
+            // Close modal if user clicks outside of the modal
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        
+            // Edit Profile button click (you can add functionality for editing here)
+            var editProfileBtn = document.getElementById("editProfileBtn");
+            editProfileBtn.onclick = function() {
+                alert("Edit Profile clicked!");
+                // Here you can add functionality to open an edit form or navigate to another page
+            }
+        });
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const downloadBtn = document.getElementById("download-pdf");
+
+        downloadBtn.addEventListener("click", function() {
+            const { jsPDF } = window.jspdf;
+
+            // Disable the button to prevent multiple clicks
+            downloadBtn.disabled = true;
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: 'a4'
+            });
+
+            const container = document.querySelector('.content-container');
+
+            // Use html2canvas to capture the charts in the container
+            html2canvas(container, { scale: 2 }).then((canvas) => {
+                const imgData = canvas.toDataURL("image/png");
+                const imgWidth = 400; // Adjust this based on your container width
+                const pageHeight = 550; // Adjust based on A4 page height in pixels
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                let position = 20; // Margin from top of page
+                doc.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
+
+                // Save the PDF
+                doc.save("charts_dashboard.pdf");
+
+                // Enable the button again
+                downloadBtn.disabled = false;
+            }).catch((err) => {
+                console.error("Error generating PDF:", err);
+                alert("An error occurred while generating the PDF. Please try again.");
+                downloadBtn.disabled = false;
+            });
+        });
+    });
+
+
+    
+    
+</script>
+    
+</body>
+</html>

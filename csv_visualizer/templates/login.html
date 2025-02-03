@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Existing CSS styles */
+        body {
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-custom {
+            margin-bottom: 20px;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 40px 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-container h2 {
+            margin-bottom: 30px;
+            font-weight: 700;
+            color: #343a40;
+            text-align: center;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+        }
+
+        .form-control {
+            border-radius: 0;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #6a11cb;
+        }
+
+        .btn-primary {
+            background-color: #6a11cb;
+            border-color: #6a11cb;
+            border-radius: 50px;
+            padding: 10px 0;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2575fc;
+            border-color: #2575fc;
+        }
+
+        .text-center a {
+            color: #6a11cb;
+            font-weight: 500;
+        }
+
+        .text-center a:hover {
+            color: #2575fc;
+            text-decoration: none;
+        }
+
+        .login-container .input-group-text {
+            width: 45px;
+            justify-content: center;
+        }
+
+        .login-container .input-group-prepend .input-group-text i {
+            font-size: 18px;
+            color: #6c757d;
+        }
+
+        .is-valid {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+
+        .is-invalid {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .invalid-feedback {
+            display: block;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light navbar-custom">
+        <a class="navbar-brand" href="{% url 'csv_visualizer:home' %}">Home</a>
+    </nav>
+
+    <div class="container d-flex justify-content-center align-items-center flex-grow-1">
+        <div class="login-container">
+            <h2>Login</h2>
+            <form method="post" action="{% url 'csv_visualizer:login_view' %}" >
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        </div>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required minlength="3" maxlength="12">
+                    </div>
+                    <div id="error-messages"></div>
+                </div>
+                <div class="form-group" position-relative>
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        </div>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password" required minlength="8" maxlength="18">
+                        <div class="input-group-append">
+                            <span class="input-group-text toggle-password" style="cursor: pointer;">
+                                <i class="fas fa-eye-slash"></i>
+                            </span>
+                        </div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+             {% comment %} <div class="forgot-password mt-3 text-center">
+                <p><a href="{% url 'csv_visualizer:password_reset' %}"><i class="fas fa-unlock-alt"></i> Forgot Password?</a></p>
+            </div>  {% endcomment %}
+            <div class="mt-4 text-center">
+                <p>Don't have an account? <a href="{% url 'csv_visualizer:register' %}">Register here</a></p>
+            </div>
+        </div>
+    </div>
+
+   <!-- Error Modal (same for all cases, dynamically updated) -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-message">
+                <!-- Error or success message will be injected here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" id="redirect-button" class="btn btn-primary" style="display:none;">Go to Dashboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+        
+    $(document).ready(function() {
+        // Check if there are any messages passed from the backend
+        {% if messages %}
+            let showModal = false; // Flag to track if modal should be shown
+            {% for message in messages %}
+                if ("{{ message }}" === "Login successful!") {
+                    $('#errorModalLabel').text('Login Successful');
+                    $('#modal-message').html('<p>You have logged in successfully!</p>');
+                    $('#redirect-button').show(); // Show the "Go to Dashboard" button
+                    $('#redirect-button').click(function() {
+                        window.location.href = "/upload/"; // Replace with your actual dashboard URL
+                    });
+                    showModal = true; // Set flag to true for successful login
+                } else if ("{{ message }}" === "User not found or invalid credentials.") {
+                    $('#errorModalLabel').text('Login Error');
+                    $('#modal-message').html('<p>User not found. Please check your username and password.</p>');
+                    showModal = true; // Set flag to true for invalid credentials
+                } else if ("{{ message }}" === "Invalid username or password.") {
+                    $('#errorModalLabel').text('Invalid Credentials');
+                    $('#modal-message').html('<p>The username or password you entered is incorrect.</p>');
+                    showModal = true; // Set flag to true for invalid credentials
+                }
+            {% endfor %}
+    
+            // Only show modal if a relevant message exists
+            if (showModal) {
+                $('#errorModal').modal('show');
+            }
+        {% endif %}
+    });
+    
+    $(document).ready(function () {
+        // Toggle password visibility
+        $('.toggle-password').on('click', function () {
+            const passwordField = $('#password');
+            const icon = $(this).find('i');
+
+            // Check the current type of the password field
+            if (passwordField.attr('type') === 'password') {
+                passwordField.attr('type', 'text');
+                icon.removeClass('fa-eye-slash').addClass('fa-eye'); // Change icon
+            } else {
+                passwordField.attr('type', 'password');
+                icon.removeClass('fa-eye').addClass('fa-eye-slash'); // Change icon back
+            }
+        });
+    });
+
+</script>
+</body>
+
+</html>
+
+
+
+
+

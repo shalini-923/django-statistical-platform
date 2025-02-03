@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+
+        
+        body {
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f8f9fa; /* Light grey background */
+            color: #333; /* Darker text for contrast */
+            padding: 10px 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar button {
+            background-color: #3498db; /* Blue button for contrast */
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .navbar button:hover {
+            background-color: #2980b9;
+        }
+
+        .navbar h1 {
+            font-size: 20px;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .content {
+            margin-top: 70px; /* Offset for the fixed navbar */
+            padding: 20px;
+        }
+
+        .chart-container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff; /* White background for better contrast */
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+
+        h3 {
+            color: #2c3e50;
+        }
+
+
+        /* Responsive Styles */
+        @media screen and (max-width: 768px) {
+            .navbar h1 {
+                font-size: 1.2rem; /* Smaller text for smaller screens */
+            }
+
+            .navbar button {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .chart-container {
+                width: 100%;
+                padding: 15px;
+            }
+
+            .chart-container h3 {
+                font-size: 1rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .navbar {
+                padding: 10px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .navbar button {
+                width: 100%;
+                padding: 10px;
+                margin-top: 10px;
+                font-size: 14px;
+            }
+
+            .navbar h1 {
+                font-size: 1.1rem;
+                margin-top: 10px;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+
+            .chart-container {
+                padding: 10px;
+            }
+
+            .chart-container h3 {
+                font-size: 1rem;
+            }
+        }
+
+        /* Mobile Style */
+        @media screen and (max-width: 320px) {
+            .navbar button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .chart-container {
+                padding: 10px;
+            }
+
+            .navbar h1 {
+                font-size: 1rem;
+            }
+
+            h2 {
+                font-size: 1.2rem;
+            }
+
+            .chart-container h3 {
+                font-size: 0.9rem;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Fixed Navigation Bar -->
+    <div class="navbar">
+        <button onclick="history.back()">⬅ Back</button>
+        <h1>Chart.js Visualization</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <h2>CSV Data Visualization</h2>
+
+        <!-- Bar Chart Container -->
+        <div class="chart-container" id="barChartContainer">
+            <h3>Bar Chart</h3>
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <!-- Pie Chart Container -->
+        <div class="chart-container" id="pieChartContainer">
+            <h3>Pie Chart</h3>
+            <canvas id="pieChart"></canvas>
+        </div>
+
+        <!-- Line Chart Container -->
+        <div class="chart-container" id="lineChartContainer">
+            <h3>Line Chart</h3>
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Pass serialized JSON data into the template -->
+    <script id="labels" type="application/json">{{ labels|safe }}</script>
+    <script id="barData" type="application/json">{{ bar_data|safe }}</script>
+    <script id="pieData" type="application/json">{{ pie_data|safe }}</script>
+    <script id="lineData" type="application/json">{{ line_data|safe }}</script>
+
+    <script>
+        // Parse JSON data from Django context
+        const labels = JSON.parse(document.getElementById('labels').textContent);
+        const barData = JSON.parse(document.getElementById('barData').textContent);
+        const pieData = JSON.parse(document.getElementById('pieData').textContent);
+        const lineData = JSON.parse(document.getElementById('lineData').textContent);
+
+        // Bar Chart
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Bar Chart (Data from CSV)',
+                    data: barData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Pie Chart
+        const ctxPie = document.getElementById('pieChart').getContext('2d');
+        const pieChart = new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pie Chart (Data from CSV)',
+                    data: pieData,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                    hoverOffset: 4
+                }]
+            }
+        });
+
+        // Line Chart
+        const ctxLine = document.getElementById('lineChart').getContext('2d');
+        const lineChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Line Chart (Data from CSV)',
+                    data: lineData,
+                    fill: false,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                }]
+            }
+        });
+    </script>
+
+</body>
+</html>

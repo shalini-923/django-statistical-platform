@@ -1,0 +1,544 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CSV</title>
+    <!-- Add these lines to your template if you haven't already included Bootstrap JS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+   
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <!-- AOS Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 20px;
+        }
+        
+        /* Heading */
+        h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            margin: 20px 0;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background-color: #fafafa;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .table {
+            margin-top: 20px;
+        }
+        table tr:hover {
+            background-color: #f1f5f9;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .btn-outline-primary:hover {
+            background-color: #e7f3ff;
+        }
+        .pagination {
+            justify-content: center;
+        }
+        #filePreview {
+            display: none;
+        }
+
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            background-color: #fafafa;
+            cursor: pointer;
+            color: #888;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area span {
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn-primary[disabled] {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
+        
+        /* Table Styles */
+        .attached-files {
+            margin-top: 20px;
+        }
+        
+        .file-table {
+            margin-top: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        
+        td button {
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+        
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        /* Messages */
+        .messages {
+            list-style-type: none;
+            padding: 10px;
+            background-color: #f0f4c3;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .messages li {
+            margin: 5px 0;
+        }
+        .modal-dialog {
+            max-width: 500px;  /* Optional: limit modal width */
+            margin: auto;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .btn-outline-primary {
+            color:#007bff;
+            border-color: #007bff;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color:#fff;
+            color:#007bff;
+        }
+        
+        .btn-outline-danger {
+            color: #dc3545;
+            border: 2px solid #dc3545;
+            background-color: transparent;
+        }
+    
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+    
+        .btn-outline-danger:focus {
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .upload-section {
+                padding: 20px;
+            }
+        
+            table {
+                font-size: 14px;
+            }
+        }
+        
+        
+</style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand text-primary" href="#">CSV Manager</a>
+            <div class="d-flex ms-auto">
+                <a href="{% url 'csv_visualizer:visualize_csv' %}" class="btn btn-info me-2">
+                    <i class="fa fa-chart-bar"></i> Go to Visualization
+                </a>
+                <a href="{% url 'csv_visualizer:custom_logout' %}" class="btn btn-outline-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-5 pt-4">
+        <h2 data-aos="fade-up">Upload CSV Files</h2>
+        <p data-aos="fade-up">Upload your files and manage your project documents efficiently.</p>
+    <!-- Display success or error messages -->
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    
+
+    <!-- Upload Section -->
+    <div class="upload-section" id="dropzone" data-aos="fade-up">
+        <span class="fw-bold">Drag and drop files here</span>
+        <p class="small text-muted">or click to upload (Max size: 10MB)</p>
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            
+            <!-- File Input (hidden) -->
+            <input type="file" id="fileInput" name="file" class="form-control d-none" accept=".csv" {% if upload_disabled %}disabled{% endif %}>
+            
+            <!-- Select File Button -->
+            <button type="button" class="btn btn-primary mt-3" id="fileSelectButton" {% if upload_disabled %}disabled{% endif %}>
+                Select File
+            </button>
+            
+            <!-- Upload Button (disabled based on user role) -->
+            <button type="submit" class="btn btn-success mt-3" id="uploadButton" {% if upload_disabled %}disabled{% endif %}>
+                Upload CSV
+            </button>
+        </form>
+        
+
+        <!-- File Preview Section -->
+        <div class="mt-3" id="filePreview">
+            <h5>File Details:</h5>
+            <ul class="list-unstyled">
+                <li><strong>File Name:</strong> <span id="fileName"></span></li>
+                <li><strong>File Size:</strong> <span id="fileSize"></span></li>
+                <li><strong>File Type:</strong> <span id="fileType"></span></li>
+            </ul>
+            <button class="btn btn-outline-danger btn-sm" id="removeFileButton">Remove File</button>
+        </div>
+    </div>
+
+    <!-- Attached Files Section -->
+    {% comment %} <div class="attached-files mt-5"> {% endcomment %}
+    <div class="attached-files" data-aos="fade-right">
+        <h3>Attached Files</h3>
+        <p>Manage the files you've uploaded below.</p>
+        {% comment %} <div class="table-responsive"> {% endcomment %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>File name</th>
+                        <th>Date uploaded</th>
+                        <th>Uploaded by</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% comment %} {% for file in user_files %} {% endcomment %}
+                    {% for file in page_obj %}
+
+                    <tr>
+                        <td>{{ file.file.name }}</td>
+                        <td>{{ file.uploaded_at|date:"M d, Y" }}</td>
+                        <td>{{ file.uploaded_by.username }}</td>
+                        <td class="d-flex gap-2">
+                            <!-- View button with Font Awesome icon -->
+                            <a href="{% url 'csv_visualizer:visualize_csv' file.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> 
+                            </a>
+                            
+
+                           <!-- Delete button -->
+                                <a href="{% url 'csv_visualizer:delete_csv' file.id %}" 
+                                class="btn btn-outline-danger btn-sm btn-delete"
+                                {% if file.uploaded_by != request.user %}
+                                style="pointer-events: none; opacity: 0.5;"  
+                                {% else %}
+                                data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" 
+                                data-delete-url="{% url 'csv_visualizer:delete_csv' file.id %}"
+                                {% endif %}>
+                                <i class="fas fa-trash-alt"></i> 
+                                </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No files uploaded yet.</td>
+                        </tr>
+                    </tr>
+                    {% endfor %}
+                    {% comment %} {% endfor %} {% endcomment %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<nav aria-label="Page navigation" class="d-flex justify-content-center mt-4"> 
+
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+
+   <!-- Delete Confirmation Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true" inert="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this file?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteLink" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Modal and Event Listener -->
+    <script>
+
+       
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle all delete button clicks
+            document.querySelectorAll('.btn-delete').forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();  // Prevent immediate deletion
+        
+                    // Get the delete URL from the data attribute of the clicked button
+                    const deleteUrl = this.getAttribute('data-delete-url');
+                    console.log("Delete URL:", deleteUrl);  // Debug: Check the delete URL
+        
+                    // Ensure delete URL is valid
+                    if (deleteUrl) {
+                        // Set the href of the confirmation link inside the modal
+                        document.getElementById('confirmDeleteLink').setAttribute('href', deleteUrl);
+                        
+                        // Disable inert behavior (make sure modal content is focusable)
+                        const modalElement = document.getElementById('confirmDeleteModal');
+                        modalElement.removeAttribute('inert');  // Make the modal focusable
+                        
+                        // Open the modal using Bootstrap's Modal API
+                        const modal = new bootstrap.Modal(modalElement);
+                        modal.show();
+                    } else {
+                        console.error('Delete URL is missing or invalid.');
+                    }
+                });
+            });
+        
+            // Handle the confirmation of deletion inside the modal
+            document.getElementById('confirmDeleteLink')?.addEventListener('click', function(event) {
+                // Optional: Add AJAX deletion handling here if required
+                // For now, this will perform the actual deletion by navigating to the delete URL
+            });
+        
+            // Close modal event (handle inert reactivation)
+            const modalElement = document.getElementById('confirmDeleteModal');
+            const modalCloseBtn = modalElement.querySelector('[data-bs-dismiss="modal"]');
+            modalCloseBtn.addEventListener('click', function() {
+                modalElement.setAttribute('inert', 'true');  // Re-enable inert when modal is closed
+            });
+        });
+        
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+
+
+
+        // Handle form submission
+document.getElementById('uploadForm').addEventListener('submit', (event) => {
+    // Check if the file input is empty or invalid
+    if (!fileInput.files.length || fileInput.value === '') {
+        alert('Please select a valid file.');
+        event.preventDefault();  // Prevent form submission
+        return;
+    }
+});
+
+        AOS.init({ duration: 1000 });
+    
+        // Drag and drop functionality
+        const dropzone = document.getElementById('dropzone');
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = 'blue';
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.style.borderColor = '#d1d5db';
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = '#d1d5db';
+            const files = e.dataTransfer.files;
+            console.log('Dropped files:', files);
+        });
+    
+        // File preview and validation
+        const fileInput = document.getElementById('fileInput');
+        const fileSelectButton = document.getElementById('fileSelectButton');
+        const uploadButton = document.getElementById('uploadButton');
+        const filePreview = document.getElementById('filePreview');
+        const fileNameElement = document.getElementById('fileName');
+        const fileSizeElement = document.getElementById('fileSize');
+        const fileTypeElement = document.getElementById('fileType');
+        const removeFileButton = document.getElementById('removeFileButton');
+    
+        // File selection button
+        fileSelectButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+    
+        // File input change event
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                // Validate file type and size
+                const validTypes = ['text/csv'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload a CSV file.');
+                    fileInput.value = ''; // Reset file input
+                    filePreview.style.display = 'none'; // Hide file preview
+                    uploadButton.disabled = true; // Disable upload button
+                    return; // Prevent further actions
+                }
+                if (file.size > 10 * 1024 * 1024) { // File size validation (max 10MB)
+                    alert('File is too large. Maximum size is 10MB.');
+                    fileInput.value = ''; // Reset file input
+                    filePreview.style.display = 'none'; // Hide file preview
+                    uploadButton.disabled = true; // Disable upload button
+                    return; // Prevent further actions
+                }
+        
+                // Display file details
+                fileNameElement.textContent = file.name;
+                fileSizeElement.textContent = (file.size / 1024).toFixed(2) + ' KB';
+                fileTypeElement.textContent = file.type;
+                filePreview.style.display = 'block'; // Show file preview
+        
+                // Enable the upload button
+                uploadButton.disabled = false;
+            }
+        });
+    
+        // Remove file
+        removeFileButton.addEventListener('click', () => {
+            fileInput.value = ''; // Reset file input
+            filePreview.style.display = 'none';
+            uploadButton.disabled = true;
+        });
+    
+        // Delete modal handler
+        document.querySelectorAll('.btn-delete').forEach(button => {
+            button.addEventListener('click', function () {
+                const deleteUrl = this.getAttribute('data-delete-url');
+                document.getElementById('confirmDeleteLink').href = deleteUrl;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Upload History</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+            animation: fadeIn 1s ease-out;
+        }
+        /* Fade-in animation for the body */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .content-container {
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-out;
+        }
+        .card h4 {
+            font-weight: bold;
+        }
+        .btn-download {
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .btn-download:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .no-files {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #6c757d;
+        }
+
+        .back-btn {
+            cursor: pointer;
+            color: #007bff;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: flex;
+            transition: color 0.3s ease;
+        }
+
+        .navbar {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 20px;
+            background-color: #e7f3ff; /* Soft blue */
+        }
+
+        .navbar-brand {
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .back-btn i {
+            margin-right: 5px;
+            cursor: pointer;
+            color: #0056b3;
+        }
+
+        .back-btn:hover {
+            color: #0056b3;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .search-input {
+            width: 60%;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .filter-dropdown {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+
+        /* Responsive Adjustments */
+        /* Medium to Small Devices */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                font-size: 1.1rem;  /* Adjust brand size for smaller screens */
+            }
+
+            .back-btn {
+                font-size: 0.9rem;
+                padding: 5px 8px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .btn-download {
+                font-size: 0.9rem;
+            }
+
+            .no-files {
+                font-size: 1rem;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .filter-dropdown {
+                width: 100%;
+            }
+        }
+
+        /* Small Devices (Phones) */
+        @media (max-width: 576px) {
+            .content-container {
+                padding: 15px;
+            }
+
+            .card {
+                padding: 12px;
+                margin-bottom: 15px; /* Increase gap between cards */
+            }
+
+            .card h4 {
+                font-size: 1.1rem;
+            }
+
+            .btn-download {
+                font-size: 0.85rem;
+                padding: 10px;
+            }
+
+            .no-files {
+                font-size: 1rem;
+            }
+
+            .back-btn {
+                font-size: 0.9rem;
+                padding: 5px 10px;
+            }
+
+            .navbar {
+                padding: 8px 15px;
+            }
+        }
+
+        /* Very Small Devices (Portrait Phones) */
+        @media (max-width: 400px) {
+            .card h4 {
+                font-size: 1rem; /* Smaller heading size */
+            }
+
+            .no-files {
+                font-size: 0.9rem;
+            }
+
+            .back-btn {
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+
+            .btn-download {
+                font-size: 0.8rem;
+                padding: 8px;
+            }
+
+            .search-input {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Lazy load images */
+        img[loading="lazy"] {
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        img[loading="lazy"]:not([src=""]) {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand text-primary" href="#">CSV Visualizer</a>
+            <button class="btn btn-outline-primary ms-auto back-btn">
+                <i class="fa fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </nav>
+    
+
+    <div class="container content-container">
+        <h2 class="text-center mb-4">Your Uploaded CSV Files & Analysis Reports</h2>
+
+        {% if user_files %}
+            <div class="row">
+                {% for file in user_files %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card p-3">
+                            <h4>📂 {{ file.file.name }}</h4>
+                            <p><strong>Uploaded At:</strong> {{ file.uploaded_at }}</p>
+
+                            <!-- Link to download the original CSV file -->
+                            <a href="{% url 'csv_visualizer:download_csv_file' file_id=file.id %}" class="btn btn-primary btn-download">
+                                📥 Download Original CSV
+                            </a>
+
+                            {% if file.analysisresult_set.exists %}
+                                <div class="mt-3">
+                                    <h6>Analysis Summary:</h6>
+                                    <pre class="bg-light p-2 rounded">{{ file.analysisresult_set.first.summary_stats|json_script:"analysis-summary" }}</pre>
+
+                                    <!-- Link to download the analysis report as a PDF -->
+                                    <a href="{% url 'csv_visualizer:download_analysis_pdf' analysis_id=file.analysisresult_set.first.id %}" class="btn btn-success btn-download">
+                                        📄 Download Analysis Report (PDF)
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="text-muted mt-3">No analysis available for this file yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Pagination Controls for Uploaded Files -->
+        <nav aria-label="Uploaded Files Pagination" class="d-flex justify-content-center mt-4">
+            <ul class="pagination">
+                {% if user_files.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ user_files.previous_page_number }}">&laquo; Previous</a>
+                </li>
+                {% endif %}
+                {% for num in user_files.paginator.page_range %}
+                <li class="page-item {% if num == user_files.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                {% if user_files.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ user_files.next_page_number }}">Next &raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        {% else %}
+            <p class="no-files">You haven't uploaded any files yet.</p>
+        {% endif %}
+    </div>
+    <script>
+        document.querySelector('.back-btn').addEventListener('click', () => {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = '/';
+        }
+    });
+
+    </script>
+    <!-- Bootstrap JS (Optional for interactive features) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
